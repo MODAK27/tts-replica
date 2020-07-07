@@ -27,7 +27,7 @@ import tensorflow as tf
 from tqdm import tqdm
 
 from tensorflow_tts.configs import Tacotron2Config
-from examples.tacotron2.tacotron_dataset import CharactorMelDataset
+from examples_tts.tacotron2.tacotron_dataset import CharactorMelDataset
 from tensorflow_tts.models import TFTacotron2
 
 import matplotlib.pyplot as plt

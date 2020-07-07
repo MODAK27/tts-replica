@@ -18,8 +18,8 @@ from tensorflow_tts.optimizers import AdamWeightDecay
 from tensorflow_tts.optimizers import WarmUp
 from tensorflow_tts.models import TFFastSpeech2
 from tensorflow_tts.configs import FastSpeech2Config
-from examples.fastspeech2.fastspeech2_dataset import CharactorDurationF0EnergyMelDataset
-from examples.fastspeech.train_fastspeech import FastSpeechTrainer
+from examples_tts.fastspeech2.fastspeech2_dataset import CharactorDurationF0EnergyMelDataset
+from examples_tts.fastspeech.train_fastspeech import FastSpeechTrainer
 from tqdm import tqdm
 import tensorflow_tts
 import yaml

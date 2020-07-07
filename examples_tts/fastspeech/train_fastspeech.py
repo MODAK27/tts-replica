@@ -29,7 +29,7 @@ import tensorflow_tts
 from tqdm import tqdm
 
 from tensorflow_tts.trainers import Seq2SeqBasedTrainer
-from examples.fastspeech.fastspeech_dataset import CharactorDurationMelDataset
+from examples_tts.fastspeech.fastspeech_dataset import CharactorDurationMelDataset
 
 import tensorflow_tts.configs.fastspeech as FASTSPEECH_CONFIG
 

@@ -1,11 +1,12 @@
 """Setup Tensorflow TTS libarary."""
 
 import os
-import sys
-from distutils.version import LooseVersion
-
 import pip
-from setuptools import find_packages, setup
+import sys
+
+from distutils.version import LooseVersion
+from setuptools import find_packages
+from setuptools import setup
 
 if LooseVersion(sys.version) < LooseVersion("3.6"):
     raise RuntimeError(
@@ -22,8 +23,8 @@ if LooseVersion(pip.__version__) < LooseVersion("19"):
 # TODO(@dathudeptrai) update requirement if needed.
 requirements = {
     "install": [
-        "tensorflow-gpu>=2.3.0rc1",
-        "tensorflow-addons>=0.10.0",
+        "tensorflow-gpu>=2.2.0",
+        "tensorflow-addons>=0.9.1",
         "setuptools>=38.5.1",
         "librosa>=0.7.0",
         "soundfile>=0.10.2",
@@ -42,6 +43,8 @@ requirements = {
     "test": [
         "pytest>=3.3.0",
         "hacking>=1.1.0",
+        "flake8<=3.8.3",
+        "flake8-docstrings<=1.5.0",
     ],
 }
 
@@ -66,13 +69,13 @@ setup(
     name="TensorflowTTS",
     version="0.0",
     url="https://github.com/dathudeptrai/TensorflowTTS",
-    author="Minh Nguyen Quan Anh, Eren Gölge, Kuan Chen, Takuya Ebata, Trinh Le Quang",
-    author_email="nguyenquananhminh@gmail.com, erengolge@gmail.com, azraelkuan@gmail.com, meguru.mokke@gmail.com, trinhle.cse@gmail.com",
+    author="Minh Nguyen Quan Anh, Eren Gölge",
+    author_email="nguyenquananhminh@gmail.com, erengolge@gmail.com",
     description="TensorflowTTS: Real-Time State-of-the-art Speech Synthesis for Tensorflow 2",
     long_description=open(os.path.join(dirname, "README.md"), encoding="utf-8").read(),
     long_description_content_type="text/markdown",
     license="Apache-2.0",
-    packages=find_packages(include=["tensorflow_tts*"]),
+    packages=find_packages(include=["tensorflow_tts*","examples_tts*",]),
     install_requires=install_requires,
     setup_requires=setup_requires,
     tests_require=tests_require,

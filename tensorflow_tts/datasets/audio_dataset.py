@@ -16,12 +16,13 @@
 
 import logging
 import os
-
 import numpy as np
+
 import tensorflow as tf
 
-from tensorflow_tts.datasets.abstract_dataset import AbstractDataset
 from tensorflow_tts.utils import find_files
+
+from tensorflow_tts.datasets.abstract_dataset import AbstractDataset
 
 
 class AudioDataset(AbstractDataset):
@@ -32,7 +33,8 @@ class AudioDataset(AbstractDataset):
         root_dir,
         audio_query="*-wave.npy",
         audio_load_fn=np.load,
-        audio_length_threshold=0,
+        audio_length_threshold=None,
+        return_utt_id=False,
     ):
         """Initialize dataset.
 
@@ -48,6 +50,20 @@ class AudioDataset(AbstractDataset):
         audio_files = sorted(find_files(root_dir, audio_query))
         audio_lengths = [audio_load_fn(f).shape[0] for f in audio_files]
 
+        # filter by threshold
+        if audio_length_threshold is not None:
+            idxs = [
+                idx
+                for idx in range(len(audio_files))
+                if audio_lengths[idx] > audio_length_threshold
+            ]
+            if len(audio_files) != len(idxs):
+                logging.warning(
+                    f"Some files are filtered by mel length threshold "
+                    f"({len(audio_files)} -> {len(idxs)})."
+                )
+            audio_files = [audio_files[idx] for idx in idxs]
+
         # assert the number of files
         assert len(audio_files) != 0, f"Not found any mel files in ${root_dir}."
 
@@ -60,7 +76,7 @@ class AudioDataset(AbstractDataset):
         self.audio_files = audio_files
         self.audio_lengths = audio_lengths
         self.audio_load_fn = audio_load_fn
-        self.audio_length_threshold = audio_length_threshold
+        self.return_utt_id = return_utt_id
 
     def get_args(self):
         return [self.utt_ids]
@@ -70,21 +86,16 @@ class AudioDataset(AbstractDataset):
             audio_file = self.audio_files[i]
             audio = self.audio_load_fn(audio_file)
             audio_length = self.audio_lengths[i]
-            
-            items = {
-                "utt_ids": utt_id,
-                "audios": audio,
-                "audio_lengths": audio_length
-            }
-
+            if self.return_utt_id:
+                items = utt_id, audio, audio_length
+            else:
+                items = audio, audio_length
             yield items
 
     def get_output_dtypes(self):
-        output_types = {
-            "utt_ids": tf.string,
-            "audios": tf.float32,
-            "audio_lengths": tf.float32   
-        }
+        output_types = (tf.float32, tf.int32)
+        if self.return_utt_id:
+            output_types = (tf.dtypes.string, *output_types)
         return output_types
 
     def create(
@@ -101,10 +112,6 @@ class AudioDataset(AbstractDataset):
             self.generator, output_types=output_types, args=(self.get_args())
         )
 
-        datasets = datasets.filter(
-            lambda x: x["audio_lengths"] > self.audio_length_threshold
-        )
-
         if allow_cache:
             datasets = datasets.cache()
 
@@ -114,12 +121,10 @@ class AudioDataset(AbstractDataset):
                 reshuffle_each_iteration=reshuffle_each_iteration,
             )
 
-        # define padded shapes
-        padded_shapes = {
-            "utt_ids": [],
-            "audios": [None],
-            "audio_lengths": [],
-        }
+        # define padded_shapes.
+        padded_shapes = ([None,], [])
+        if self.return_utt_id:
+            padded_shapes = ([], *padded_shapes)
 
         datasets = datasets.padded_batch(batch_size, padded_shapes=padded_shapes)
         datasets = datasets.prefetch(tf.data.experimental.AUTOTUNE)

@@ -14,8 +14,8 @@
 # limitations under the License.
 """Multi-band MelGAN Config object."""
 
-from tensorflow_tts.configs import (MelGANDiscriminatorConfig,
-                                    MelGANGeneratorConfig)
+from tensorflow_tts.configs import MelGANDiscriminatorConfig
+from tensorflow_tts.configs import MelGANGeneratorConfig
 
 
 class MultiBandMelGANGeneratorConfig(MelGANGeneratorConfig):

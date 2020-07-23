@@ -19,13 +19,15 @@ import logging
 import os
 
 import numpy as np
-import soundfile as sf
 import yaml
+
 from tqdm import tqdm
+import soundfile as sf
 
 from tensorflow_tts.configs import MultiBandMelGANGeneratorConfig
 from tensorflow_tts.datasets import MelDataset
-from tensorflow_tts.models import TFPQMF, TFMelGANGenerator
+from tensorflow_tts.models import TFMelGANGenerator
+from tensorflow_tts.models import TFPQMF
 
 
 def main():
@@ -105,6 +107,7 @@ def main():
         root_dir=args.rootdir,
         mel_query=mel_query,
         mel_load_fn=mel_load_fn,
+        return_utt_id=True,
     )
     dataset = dataset.create(batch_size=args.batch_size)
 
@@ -121,7 +124,7 @@ def main():
     )
 
     for data in tqdm(dataset, desc="[Decoding]"):
-        utt_ids, mels, mel_lengths = data["utt_ids"], data["mels"], data["mel_lengths"]
+        utt_ids, mels, mel_lengths = data
 
         # melgan inference.
         generated_subbands = mb_melgan(mels)

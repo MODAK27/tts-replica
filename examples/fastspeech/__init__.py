@@ -1,0 +1,1 @@
+from examples.fastspeech.fastspeech_dataset import CharactorDurationMelDataset

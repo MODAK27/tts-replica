@@ -12,7 +12,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Perform preprocessing, raw feature extraction and train/valid split."""
+
+"""Perform preprocessing, raw feature extraction and train/valid split.
+%%writefile /content/tts-replica/tensorflow_tts/bin/preprocess.py"""
 
 import argparse
 import logging
@@ -167,6 +169,7 @@ def main():
     )
 
     # train/valid utt_ids
+    #just creating another list for just gettin ids
     train_utt_ids = []
     valid_utt_ids = []
 

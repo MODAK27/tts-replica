@@ -96,12 +96,13 @@ def main():
         mel_load_fn = np.load
     else:
         raise ValueError("Support only npy format.")
-
+    
+    # calculate statistics of mel
     dataset = MelDataset(
         args.rootdir, mel_query=mel_query, mel_load_fn=mel_load_fn
     ).create(batch_size=1)
 
-    # calculate statistics
+    
     scaler = StandardScaler()
     for mel, mel_length in tqdm(dataset):
         mel = mel[0].numpy()

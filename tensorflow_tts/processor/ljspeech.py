@@ -96,6 +96,55 @@ valid_symbols = [
     "Z",
     "ZH",
 ]
+'''
+The current phoneme set has 39 phonemes, not counting varia due to lexical stress. This phoneme (or more accurately, phone) set is based on the ARPAbet symbol set developed for speech recognition uses. You can find a description of the ARPAbet on Wikipedia, as well information on how it relates to the standard IPA symbol set.
+        Phoneme Example Translation
+        ------- ------- -----------
+        AA	odd     AA D
+        AE	at	AE T
+        AH	hut	HH AH T
+        AO	ought	AO T
+        AW	cow	K AW
+        AY	hide	HH AY D
+        B 	be	B IY
+        CH	cheese	CH IY Z
+        D 	dee	D IY
+        DH	thee	DH IY
+        EH	Ed	EH D
+        ER	hurt	HH ER T
+        EY	ate	EY T
+        F 	fee	F IY
+        G 	green	G R IY N
+        HH	he	HH IY
+        IH	it	IH T
+        IY	eat	IY T
+        JH	gee	JH IY
+        K 	key	K IY
+        L 	lee	L IY
+        M 	me	M IY
+        N 	knee	N IY
+        NG	ping	P IH NG
+        OW	oat	OW T
+        OY	toy	T OY
+        P 	pee	P IY
+        R 	read	R IY D
+        S 	sea	S IY
+        SH	she	SH IY
+        T 	tea	T IY
+        TH	theta	TH EY T AH
+        UH	hood	HH UH D
+        UW	two	T UW
+        V 	vee	V IY
+        W 	we	W IY
+        Y 	yield	Y IY L D
+        Z 	zee	Z IY
+        ZH	seizure	S IY ZH ER
+
+“ARPAbet is a phonetic transcription code developed by Advanced Research
+Projects Agency (ARPA) as a part of their Speech Understanding Project (1971–1976). It
+represents each phoneme of General American English with a distinct sequence of ASCII
+characters. 
+'''
 
 _pad = "_"
 _eos = "~"
@@ -126,7 +175,7 @@ class LJSpeechProcessor(object):
         self.root_path = root_path
         self.cleaner_names = cleaner_names
 
-        items = []
+        items = []#to contain text + wav_path
         self.speaker_name = "ljspeech"
         if root_path is not None:
             with open(os.path.join(root_path, "metadata.csv"), encoding="utf-8") as ttf:

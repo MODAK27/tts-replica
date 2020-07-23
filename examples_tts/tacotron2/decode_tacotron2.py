@@ -12,7 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Extract durations based-on tacotron-2 alignments for FastSpeech."""
+"""Decode Tacotron-2."""
 
 import argparse
 import logging
@@ -21,32 +21,21 @@ import sys
 
 sys.path.append(".")
 
-import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
 import yaml
 from tqdm import tqdm
 
-from examples.tacotron2.tacotron_dataset import CharactorMelDataset
+from examples_tts.tacotron2.tacotron_dataset import CharactorMelDataset
 from tensorflow_tts.configs import Tacotron2Config
 from tensorflow_tts.models import TFTacotron2
 
 
-def get_duration_from_alignment(alignment):
-    D = np.array([0 for _ in range(np.shape(alignment)[0])])
-
-    for i in range(np.shape(alignment)[1]):
-        max_index = alignment[:, i].tolist().index(alignment[:, i].max())
-        D[max_index] = D[max_index] + 1
-
-    return D
-
-
 def main():
-    """Running extract tacotron-2 durations."""
+    """Running decode tacotron-2 mel-spectrogram."""
     parser = argparse.ArgumentParser(
-        description="Extract durations from charactor with trained Tacotron-2 "
-        "(See detail in tensorflow_tts/example/tacotron-2/extract_duration.py)."
+        description="Decode mel-spectrogram from folder ids with trained Tacotron-2 "
+        "(See detail in tensorflow_tts/example/tacotron2/decode_tacotron2.py)."
     )
     parser.add_argument(
         "--rootdir",
@@ -65,9 +54,8 @@ def main():
         "--use-norm", default=1, type=int, help="usr norm-mels for train or raw."
     )
     parser.add_argument("--batch-size", default=8, type=int, help="batch size.")
-    parser.add_argument("--win-front", default=2, type=int, help="win-front.")
-    parser.add_argument("--win-back", default=2, type=int, help="win-front.")
-    parser.add_argument("--save-alignment", default=0, type=int, help="save-alignment.")
+    parser.add_argument("--win-front", default=3, type=int, help="win-front.")
+    parser.add_argument("--win-back", default=3, type=int, help="win-front.")
     parser.add_argument(
         "--config",
         default=None,
@@ -132,72 +120,49 @@ def main():
     # define model and load checkpoint
     tacotron2 = TFTacotron2(
         config=Tacotron2Config(**config["tacotron2_params"]),
-        training=True,  # enable teacher forcing mode.
+        training=False,  # disble teacher forcing mode.
         name="tacotron2",
     )
     tacotron2._build()  # build model to be able load_weights.
     tacotron2.load_weights(args.checkpoint)
 
-    for data in tqdm(dataset, desc="[Extract Duration]"):
+    # setup window
+    tacotron2.setup_window(win_front=args.win_front, win_back=args.win_back)
+
+    for data in tqdm(dataset, desc="[Decoding]"):
         utt_ids = data["utt_ids"]
-        input_lengths = data["input_lengths"]
-        mel_lengths = data["mel_lengths"]
         utt_ids = utt_ids.numpy()
 
         # tacotron2 inference.
-        mel_outputs, post_mel_outputs, stop_outputs, alignment_historys = tacotron2(
-            **data,
-            use_window_mask=True,
-            win_front=args.win_front,
-            win_back=args.win_back,
-            training=True,
+        (
+            mel_outputs,
+            post_mel_outputs,
+            stop_outputs,
+            alignment_historys,
+        ) = tacotron2.inference(
+            input_ids=data["input_ids"], 
+            input_lengths=data["input_lengths"], 
+            speaker_ids=data["speaker_ids"],
         )
 
         # convert to numpy
-        alignment_historys = alignment_historys.numpy()
+        post_mel_outputs = post_mel_outputs.numpy()
 
-        for i, alignment in enumerate(alignment_historys):
-            real_char_length = (
-                input_lengths[i].numpy() - 1
-            )  # minus 1 because char have eos tokens.
-            real_mel_length = mel_length[i].numpy()
-            alignment = alignment[:real_char_length, :real_mel_length]
-            d = get_duration_from_alignment(alignment)  # [max_char_len]
+        for i, post_mel_output in enumerate(post_mel_outputs):
+            stop_token = tf.math.round(tf.nn.sigmoid(stop_outputs[i]))  # [T]
+            real_length = tf.math.reduce_sum(
+                tf.cast(tf.math.equal(stop_token, 0.0), tf.int32), -1
+            )
+            post_mel_output = post_mel_output[:real_length, :]
 
             saved_name = utt_ids[i].decode("utf-8")
 
-            # check a length compatible
-            assert (
-                len(d) == real_char_length
-            ), f"different between len_char and len_durations, {len(d)} and {real_char_length}"
-
-            assert (
-                np.sum(d) == real_mel_length
-            ), f"different between sum_durations and len_mel, {np.sum(d)} and {real_mel_length}"
-
             # save D to folder.
             np.save(
-                os.path.join(args.outdir, f"{saved_name}-durations.npy"),
-                d.astype(np.int32),
+                os.path.join(args.outdir, f"{saved_name}-norm-feats.npy"),
+                post_mel_output.astype(np.float32),
                 allow_pickle=False,
             )
-
-            # save alignment to debug.
-            if args.save_alignment == 1:
-                figname = os.path.join(args.outdir, f"{saved_name}_alignment.png")
-                fig = plt.figure(figsize=(8, 6))
-                ax = fig.add_subplot(111)
-                ax.set_title(f"Alignment of {saved_name}")
-                im = ax.imshow(
-                    alignment, aspect="auto", origin="lower", interpolation="none"
-                )
-                fig.colorbar(im, ax=ax)
-                xlabel = "Decoder timestep"
-                plt.xlabel(xlabel)
-                plt.ylabel("Encoder timestep")
-                plt.tight_layout()
-                plt.savefig(figname)
-                plt.close()
 
 
 if __name__ == "__main__":
